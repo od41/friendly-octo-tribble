@@ -1,5 +1,6 @@
 export interface Group {
-  group_id: string;        // Maps to on-chain pool ID
+  group_id: string; 
+  joined_users: string[];       // Maps to on-chain pool ID
   metadata: {
     name: string;
     description: string;

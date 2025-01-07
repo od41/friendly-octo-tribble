@@ -192,7 +192,6 @@ router.get('/:groupId/stats', async (req: AuthRequest, res: Response) => {
 router.post('/:groupId/join', async (req: AuthRequest, res: Response) => {
   const wallet_address = req.session.siwe?.data.address;
   const { groupId } = req.params;
-  const userId = req.body.userId; // Assuming user ID is sent in the request body
 
   try {
     const group = await Group.findOne({ group_id: groupId });
@@ -210,14 +209,14 @@ router.post('/:groupId/join', async (req: AuthRequest, res: Response) => {
     }
 
     // Add user to the joined_users array
-    group.joined_users.push(userId);
+    group.joined_users.push(wallet_address!);
     group.metadata.signed_up_members = (group.metadata.signed_up_members || 0) + 1; // Increment signed up members
     await group.save();
 
-    res.status(200).json(group);
+    res.status(200).json({data:group, ok: true});
   } catch (error) {
     console.error('Error joining group:', error);
-    res.status(500).json({ message: 'Error joining group' });
+    res.status(500).json({ message: 'Error joining group', ok: false });
   }
 });
 
