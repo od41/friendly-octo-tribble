@@ -27,14 +27,12 @@ const JoinGroup: React.FC = () => {
     const tokenContract = getTokenContract();
 
     // Contract write hook
-    const { writeContract: deposit, data: depositHash, error: depositError } = useWriteContract();
-    const { writeContract: tokenApprove, data: tokenApproveHash, error: tokenApproveError } = useWriteContract();
+    const { writeContract: deposit, data: depositHash } = useWriteContract();
+    const { writeContract: tokenApprove, data: tokenApproveHash } = useWriteContract();
 
-    console.log('tokenApproveError', tokenApproveError)
-    console.log('depositError', depositError)
 
     // Transaction receipt hook
-    const { isLoading: isWaitingForDepositTransaction } =
+    const { } =
         useWaitForTransactionReceipt({
             hash: depositHash,
         });
@@ -68,7 +66,6 @@ const JoinGroup: React.FC = () => {
 
                 const data = await response.json() as Group;
                 setIsJoinedGroup(data.joined_users.includes(address));
-                console.log('groupdata', data)
                 setGroup(data);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to fetch group');
@@ -85,7 +82,6 @@ const JoinGroup: React.FC = () => {
     const approveTokenInContract = async () => {
         const _stakeAmount = parseEther(group.rules.min_stake.toString());
 
-        console.log('tokenContract.address', tokenContract.address)
         // Approve token transfer
         // @ts-ignore
         tokenApprove({
@@ -105,7 +101,7 @@ const JoinGroup: React.FC = () => {
             // Wait for transaction to be mined
             const receipt = await publicClient.getTransactionReceipt({ hash: tokenApproveHash });
             const _stakeAmount = parseEther(group.rules.min_stake.toString());
-            console.log('receipt approve hash', receipt)
+
 
             const logs = parseEventLogs({
                 abi: erc20Abi,
@@ -117,8 +113,6 @@ const JoinGroup: React.FC = () => {
                 },
                 logs: receipt.logs,
             })
-
-            console.log('logs', logs)
 
             if (logs.length) {
                 setIsTokenApproved(true);
@@ -138,11 +132,6 @@ const JoinGroup: React.FC = () => {
             functionName: 'deposit',
             args: [BigInt(groupId), _stakeAmount],
         });
-        console.log('fitFiContract.address', fitFiContract.address)
-        console.log('groupId', groupId)
-        console.log('deposit', _stakeAmount)
-        console.log('depositHash', depositHash)
-        console.log('depositError', depositError)
 
         return true;
     }
@@ -178,7 +167,6 @@ const JoinGroup: React.FC = () => {
             });
 
             if (logs.length) {
-                console.log('deposit success')
                 setButtonText('Staked!');
                 setIsTransactionDepositSuccess(true);
             }
@@ -202,7 +190,6 @@ const JoinGroup: React.FC = () => {
             }
 
             const data = await response.json();
-            console.log('data', data);
             setIsJoinGroupLoading(false);
 
         }

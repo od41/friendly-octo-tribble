@@ -14,6 +14,7 @@ contract FitFi is ReentrancyGuard, Ownable {
         uint256 totalDeposits;
         uint256 totalInterest;
         bool isActive;
+        address owner;
         mapping(address => uint256) deposits;
         mapping(address => uint256) activityPoints;
         mapping(address => bool) hasWithdrawn;
@@ -43,7 +44,7 @@ contract FitFi is ReentrancyGuard, Ownable {
         activityValidator = IActivityValidator(_activityValidator);
     }
 
-    function createPool(uint256 startTime, uint256 duration) external onlyOwner {
+    function createPool(uint256 startTime, uint256 duration) external {
         require(startTime > block.timestamp, "Invalid start time");
 
         uint256 poolId = poolCounter++;
@@ -52,6 +53,7 @@ contract FitFi is ReentrancyGuard, Ownable {
         pool.startTime = startTime;
         pool.endTime = startTime + duration;
         pool.isActive = true;
+        pool.owner = msg.sender;
 
         emit PoolCreated(poolId, startTime, startTime + duration);
     }
@@ -141,8 +143,9 @@ contract FitFi is ReentrancyGuard, Ownable {
         emit Withdrawn(poolId, msg.sender, principal, rewards);
     }
 
-    function closePool(uint256 poolId) external onlyOwner {
+    function closePool(uint256 poolId) external {
         Pool storage pool = pools[poolId];
+        require(msg.sender == pool.owner, "Only the pool owner can close it");
         require(block.timestamp > pool.endTime, "Pool still active");
         require(pool.isActive, "Pool already closed");
 
