@@ -56,8 +56,8 @@ function generateContractTypes(contractName: string, abi: any[]): string {
 import { type Abi } from 'viem'
 
 export type ${contractName}Config = {
-  address: \`0x\${string}\`
-  abi: Abi
+  address: \`0x\${string}\`;
+  abi: Abi;
 }
 
 export type ${contractName}Functions = {
@@ -65,15 +65,31 @@ export type ${contractName}Functions = {
 
   // Generate function types
   abi.filter(item => item.type === 'function').forEach(func => {
-    const inputs = func.inputs.map((input: any) => 
-      `${input.name}: ${convertSolidityTypeToTS(input.type)}`
-    ).join(', ');
+    let argCounter = 1;
+    const inputs = func.inputs.map((input: any) => {
+      // Special handling for known address parameters
+      const paramType = input.type === 'address' ? 
+        '`0x${string}`' : 
+        convertSolidityTypeToTS(input.type);
+      
+      // Use input name if available, otherwise use numbered arg
+      const paramName = input.name || (argCounter === 1 ? 'arg' : `arg${argCounter}`);
+      argCounter++;
+      
+      return `${paramName}: ${paramType}`;
+    }).join(', ');
     
-    const outputs = func.outputs?.map((output: any) =>
-      convertSolidityTypeToTS(output.type)
-    ).join(' | ') || 'void';
+    let outputs = func.outputs?.map((output: any) => {
+      // Special handling for known address return types
+      if (output.type === 'address') {
+        if (['depositToken', 'activityValidator', 'yieldProtocol'].includes(func.name)) {
+          return '`0x${string}`';
+        }
+      }
+      return convertSolidityTypeToTS(output.type);
+    }).join(' | ') || 'void';
 
-    types += `  ${func.name}(${inputs}): Promise<${outputs}>\n`;
+    types += `  ${func.name}(${inputs}): Promise<${outputs}>;\n`;
   });
 
   types += '}\n\n';
@@ -81,11 +97,11 @@ export type ${contractName}Functions = {
   // Generate event types
   types += `export type ${contractName}Events = {\n`;
   abi.filter(item => item.type === 'event').forEach(event => {
-    const params = event.inputs.map((input: any) =>
-      `${input.name}: ${convertSolidityTypeToTS(input.type)}`
-    ).join(', ');
-    
-    types += `  ${event.name}: (${params}) => void\n`;
+    types += `  ${event.name}: {\n`;
+    event.inputs.forEach((input: any) => {
+      types += `    ${input.name}: ${convertSolidityTypeToTS(input.type)};\n`;
+    });
+    types += `  };\n`;
   });
 
   types += '}\n';
@@ -95,7 +111,8 @@ export type ${contractName}Functions = {
 
 function convertSolidityTypeToTS(solidityType: string): string {
   if (solidityType.includes('[]')) {
-    return `${convertSolidityTypeToTS(solidityType.replace('[]', ''))}[]`;
+    const baseType = convertSolidityTypeToTS(solidityType.replace('[]', ''));
+    return `${baseType}[]`;
   }
   
   const typeMap: { [key: string]: string } = {
@@ -107,7 +124,8 @@ function convertSolidityTypeToTS(solidityType: string): string {
     'uint': 'bigint',
     'int': 'bigint',
     'bytes32': '`0x${string}`',
-    'bytes': '`0x${string}`',
+    'bytes': 'string',
+    'tuple': 'any',
   };
 
   return typeMap[solidityType] || 'any';

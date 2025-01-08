@@ -4,6 +4,7 @@ import FitFiABI from './FitFi.abi.json';
 import contractAddresses from './contract-addresses.json';
 import type { FitFiConfig } from './FitFi';
 import { erc20Abi } from 'viem';
+import ActivityValidatorABI from './ActivityValidator.abi.json';
 
 // Create a viem public client
 export const publicClient = createPublicClient({
@@ -21,9 +22,18 @@ export function getFitFiContract(network: string = 'lensTestnet'): FitFiConfig {
 }
 
 export function getTokenContract(network: string = 'lensTestnet'): any {
-  const address = contractAddresses[network].PaymentERC20 as Address;
+  const address = contractAddresses[network].FDollars as Address;
   return {
     address,
     abi: erc20Abi,
   };
 }
+
+export function getActivityValidatorContract(network: string = 'lensTestnet') {
+  const address = contractAddresses[network].ActivityValidator as Address;
+  return {
+    address,
+    abi: ActivityValidatorABI as unknown as Abi,
+  };
+}
+

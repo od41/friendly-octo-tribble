@@ -8,26 +8,26 @@ export type FitFiConfig = {
 
 export type FitFiFunctions = {
   ADMIN_FEE_BPS(): Promise<bigint>;
-  activityValidator(): Promise<string>;
-  calculateRewards(poolId: bigint, user: string): Promise<bigint>;
+  activityValidator(): Promise<`0x${string}`>;
+  calculateRewards(poolId: bigint, user: `0x${string}`): Promise<bigint>;
   closePool(poolId: bigint): Promise<void>;
   createPool(startTime: bigint, duration: bigint): Promise<void>;
   deposit(poolId: bigint, amount: bigint): Promise<void>;
-  depositToken(): Promise<string>;
+  depositToken(): Promise<`0x${string}`>;
   getPoolTotalActivityPoints(poolId: bigint): Promise<bigint>;
   getPoolTotalDeposits(poolId: bigint): Promise<bigint>;
-  getUserActivityPoints(poolId: bigint, user: string): Promise<bigint>;
-  getUserDeposit(poolId: bigint, user: string): Promise<bigint>;
-  owner(): Promise<string>;
+  getUserActivityPoints(poolId: bigint, user: `0x${string}`): Promise<bigint>;
+  getUserDeposit(poolId: bigint, user: `0x${string}`): Promise<bigint>;
+  owner(): Promise<`0x${string}`>;
   poolCounter(): Promise<bigint>;
-  pools(poolId: bigint): Promise<bigint | bigint | bigint | bigint | boolean>;
+  pools(arg: bigint): Promise<bigint | bigint | bigint | bigint | boolean | `0x${string}`>;
   renounceOwnership(): Promise<void>;
-  submitActivity(poolId: bigint, proof: any, nearbyUsers: string[], proximityProofs: string[]): Promise<void>;
-  totalActivityPoints(poolId: bigint): Promise<bigint>;
-  transferOwnership(newOwner: string): Promise<void>;
-  userMultipliers(poolId: bigint, user: string): Promise<bigint>;
+  submitActivity(poolId: bigint, proof: any, nearbyUsers: `0x${string}`[], proximityProofs: `0x${string}`[]): Promise<void>;
+  totalActivityPoints(arg: bigint): Promise<bigint>;
+  transferOwnership(newOwner: `0x${string}`): Promise<void>;
+  userMultipliers(arg: bigint, arg2: `0x${string}`): Promise<bigint>;
   withdraw(poolId: bigint): Promise<void>;
-  yieldProtocol(): Promise<string>;
+  yieldProtocol(): Promise<`0x${string}`>;
 }
 
 export type FitFiEvents = {

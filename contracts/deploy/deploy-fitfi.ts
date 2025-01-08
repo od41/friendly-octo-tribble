@@ -64,6 +64,9 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
    // Generate frontend files
    await generateFrontendFiles('FitFi', fitFi, hre.network.name);
+   await generateFrontendFiles('ActivityValidator', activityValidator, hre.network.name);
+   await generateFrontendFiles('FDollars', token, hre.network.name);
+
 
   console.log("Deployment completed!");
 } 
