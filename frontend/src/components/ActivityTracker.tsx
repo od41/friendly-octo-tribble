@@ -7,6 +7,15 @@ interface Location {
   timestamp: number;
 }
 
+interface Session {
+  _id: string;
+  movement_data: {
+    gps_logs: Location[];
+    steps: number;
+    distance: number;
+  };
+}
+
 export const ActivityTracker: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
@@ -18,6 +27,8 @@ export const ActivityTracker: React.FC = () => {
     steps: 0
   });
   const [locations, setLocations] = useState<Location[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [wallet_address, setWalletAddress] = useState<string>('');
 
   useEffect(() => {
     if (isTracking) {
@@ -52,42 +63,82 @@ export const ActivityTracker: React.FC = () => {
     }
   }, [isTracking]);
 
-  const updateActivity = (newLocation: Location) => {
-    setActivity(prev => {
-      // Calculate new distance and duration
-      const distance = prev.distance + calculateDistance(locations[locations.length - 1], newLocation);
-      const duration = (newLocation.timestamp - locations[0]?.timestamp) / 1000 || 0;
-      const steps = Math.floor(distance * 1300); // Rough estimation of steps
+  const startSession = async () => {
+    try {
+      const response = await axios.post('/api/activity/start', {
+        pool_id: groupId,
+        wallet_address
+      });
+      setSessionId(response.data._id);
+      setIsTracking(true);
+    } catch (error) {
+      setError('Failed to start activity session');
+      console.error(error);
+    }
+  };
 
-      return {
-        distance,
-        duration,
-        steps
-      };
-    });
+  const updateActivity = async (newLocation: Location) => {
+    if (!sessionId) return;
+
+    const newDistance = calculateDistance(locations[locations.length - 1], newLocation);
+    const newSteps = Math.floor(newDistance * 1300);
+
+    try {
+      await axios.post(`/api/activity/${sessionId}/movement`, {
+        gps_logs: [newLocation],
+        steps: newSteps
+      });
+
+      setActivity(prev => ({
+        distance: prev.distance + newDistance,
+        duration: (newLocation.timestamp - locations[0]?.timestamp) / 1000 || 0,
+        steps: prev.steps + newSteps
+      }));
+    } catch (error) {
+      console.error('Failed to update movement data:', error);
+    }
   };
 
   const calculateDistance = (loc1?: Location, loc2?: Location): number => {
     if (!loc1 || !loc2) return 0;
     // Haversine formula implementation
     const R = 6371e3; // Earth's radius in meters
-    const φ1 = loc1.latitude * Math.PI/180;
-    const φ2 = loc2.latitude * Math.PI/180;
-    const Δφ = (loc2.latitude - loc1.latitude) * Math.PI/180;
-    const Δλ = (loc2.longitude - loc1.longitude) * Math.PI/180;
+    const φ1 = loc1.latitude * Math.PI / 180;
+    const φ2 = loc2.latitude * Math.PI / 180;
+    const Δφ = (loc2.latitude - loc1.latitude) * Math.PI / 180;
+    const Δλ = (loc2.longitude - loc1.longitude) * Math.PI / 180;
 
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) *
+      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return R * c;
   };
 
-  const handleFinish = () => {
-    setIsTracking(false);
-    // Save activity data
-    navigate(`/performance/${groupId}`);
+  const handleFinish = async () => {
+    if (!sessionId) return;
+
+    try {
+      const response = await axios.post(`/api/activity/${sessionId}/end`);
+      setIsTracking(false);
+
+      const proofHash = response.data.proof_hash;
+      // await validateActivityOnChain(proofHash, response.data.movement_data);
+
+      navigate(`/performance/${groupId}`);
+    } catch (error) {
+      setError('Failed to end activity session');
+      console.error(error);
+    }
+  };
+
+  const handleStartStop = () => {
+    if (isTracking) {
+      handleFinish();
+    } else {
+      startSession();
+    }
   };
 
   return (
@@ -126,12 +177,11 @@ export const ActivityTracker: React.FC = () => {
               </div>
 
               <button
-                onClick={() => isTracking ? handleFinish() : setIsTracking(true)}
-                className={`w-full py-3 rounded-full font-semibold ${
-                  isTracking 
-                    ? 'bg-red-500 text-white' 
+                onClick={handleStartStop}
+                className={`w-full py-3 rounded-full font-semibold ${isTracking
+                    ? 'bg-red-500 text-white'
                     : 'bg-purple-600 text-white'
-                }`}
+                  }`}
               >
                 {isTracking ? 'Finish Activity' : 'Start Running'}
               </button>
