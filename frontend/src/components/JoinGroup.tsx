@@ -10,7 +10,7 @@ const JoinGroup: React.FC = () => {
     const { groupId } = useParams<{ groupId: string }>();
     const navigate = useNavigate();
     const [showStakingModal, setShowStakingModal] = useState(false);
-    const [isStaking, setIsStaking] = useState(false);
+    // const [isStaking, setIsStaking] = useState(false);
     const [group, setGroup] = useState<Group | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -189,7 +189,8 @@ const JoinGroup: React.FC = () => {
                 throw new Error('Failed to save to db');
             }
 
-            const data = await response.json();
+            // const data = await response.json();
+            // console.log('data', data)
             setIsJoinGroupLoading(false);
 
         }
@@ -202,7 +203,7 @@ const JoinGroup: React.FC = () => {
 
         try {
             setIsJoinGroupLoading(true);
-            setIsStaking(true);
+            // setIsStaking(true);
             setError(null);
 
             // Approve token transfer
@@ -212,7 +213,7 @@ const JoinGroup: React.FC = () => {
         } catch (err) {
             console.error('Staking error:', err);
             setError(err instanceof Error ? err.message : 'Failed to stake');
-            setIsStaking(false);
+            // setIsStaking(false);
             setIsJoinGroupLoading(false);
         }
     };
@@ -220,7 +221,7 @@ const JoinGroup: React.FC = () => {
     // Watch for transaction success and navigate
     useEffect(() => {
         if (isTransactionDepositSuccess && groupId) {
-            setIsStaking(false);
+            // setIsStaking(false);
             navigate(`/activity/${groupId}`);
         }
     }, [isTransactionDepositSuccess, groupId, navigate]);

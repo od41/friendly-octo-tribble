@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAccount } from 'wagmi';
+import { BASE_BACKEND_URL } from '../contexts/AppProvider';
 
 interface Location {
   latitude: number;
@@ -7,14 +9,14 @@ interface Location {
   timestamp: number;
 }
 
-interface Session {
-  _id: string;
-  movement_data: {
-    gps_logs: Location[];
-    steps: number;
-    distance: number;
-  };
-}
+// interface Session {
+//   _id: string;
+//   movement_data: {
+//     gps_logs: Location[];
+//     steps: number;
+//     distance: number;
+//   };
+// }
 
 export const ActivityTracker: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -28,7 +30,8 @@ export const ActivityTracker: React.FC = () => {
   });
   const [locations, setLocations] = useState<Location[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [wallet_address, setWalletAddress] = useState<string>('');
+  const {address} = useAccount();
+  // const [wallet_address, setWalletAddress] = useState<string>('');
 
   useEffect(() => {
     if (isTracking) {
@@ -65,11 +68,19 @@ export const ActivityTracker: React.FC = () => {
 
   const startSession = async () => {
     try {
-      const response = await axios.post('/api/activity/start', {
-        pool_id: groupId,
-        wallet_address
+      const response = await fetch(`${BASE_BACKEND_URL}/api/activity/start`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          pool_id: groupId,
+          wallet_address: address
+        })
       });
-      setSessionId(response.data._id);
+      const data = await response.json();
+      setSessionId(data._id);
       setIsTracking(true);
     } catch (error) {
       setError('Failed to start activity session');
@@ -84,9 +95,16 @@ export const ActivityTracker: React.FC = () => {
     const newSteps = Math.floor(newDistance * 1300);
 
     try {
-      await axios.post(`/api/activity/${sessionId}/movement`, {
-        gps_logs: [newLocation],
-        steps: newSteps
+      await fetch(`${BASE_BACKEND_URL}/api/activity/${sessionId}/movement`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          gps_logs: [newLocation],
+          steps: newSteps
+        })
       });
 
       setActivity(prev => ({
@@ -120,10 +138,17 @@ export const ActivityTracker: React.FC = () => {
     if (!sessionId) return;
 
     try {
-      const response = await axios.post(`/api/activity/${sessionId}/end`);
+      const response = await fetch(`${BASE_BACKEND_URL}/api/activity/${sessionId}/end`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
       setIsTracking(false);
 
-      const proofHash = response.data.proof_hash;
+
+
+      const proofHash = data.proof_hash;
+      console.log('proofHash', proofHash)
       // await validateActivityOnChain(proofHash, response.data.movement_data);
 
       navigate(`/performance/${groupId}`);

@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { ActivityValidatorABI } from '../contracts/ActivityValidator'; // You'll need to create this
+// import { ActivityValidatorABI } from '../contracts/ActivityValidator'; // You'll need to create this
 
 export async function validateActivityOnChain(
   proofHash: string,
@@ -14,7 +14,7 @@ export async function validateActivityOnChain(
     // Connect to the ActivityValidator contract
     const activityValidator = new ethers.Contract(
       contractAddress,
-      ActivityValidatorABI,
+      [],
       signer
     );
 
